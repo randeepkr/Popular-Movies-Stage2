@@ -18,4 +18,6 @@ public class Movie {
     public List<MovieDetail> getResults(){
         return results;
     }
+
+
 }

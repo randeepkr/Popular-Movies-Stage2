@@ -1,14 +1,17 @@
 package com.randeep.myapp.popularmoviesstage2.apiCall;
 
+import android.content.ContentValues;
+import android.content.Context;
 import android.util.Log;
 
 import com.randeep.myapp.popularmoviesstage2.BuildConfig;
-import com.randeep.myapp.popularmoviesstage2.GridLayoutAdapter;
 import com.randeep.myapp.popularmoviesstage2.bean.Movie;
 import com.randeep.myapp.popularmoviesstage2.bean.MovieDetail;
+import com.randeep.myapp.popularmoviesstage2.data.MovieContract;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -21,12 +24,13 @@ import retrofit2.Retrofit;
  */
 public class FetchMovieTask {
 
+    private static final String LOG_TAG = FetchMovieTask.class.getSimpleName();
     List<MovieDetail> moviesList = new ArrayList<>();
-    GridLayoutAdapter gridLayoutAdapter;
+    Context mContext;
 
-    public FetchMovieTask(GridLayoutAdapter gridLayoutAdapter){
+    public FetchMovieTask(Context context) {
         networkCall();
-        this.gridLayoutAdapter = gridLayoutAdapter;
+        mContext = context;
     }
 
     private void networkCall() {
@@ -44,17 +48,55 @@ public class FetchMovieTask {
                 Movie movie = response.body();
                 moviesList = movie.getResults();
 
-                if (moviesList.size() > 0){
-                    gridLayoutAdapter.movieDetailArrayList.clear();
-                    gridLayoutAdapter.movieDetailArrayList = (ArrayList<MovieDetail>) moviesList;
-                    gridLayoutAdapter.notifyDataSetChanged();
+
+                if (moviesList.size() > 0) {
+                    addDataToDatabase(moviesList);
+//                    gridLayoutAdapter.movieDetailArrayList.clear();
+//                    gridLayoutAdapter.movieDetailArrayList = (ArrayList<MovieDetail>) moviesList;
+//                    gridLayoutAdapter.notifyDataSetChanged();
                 }
             }
 
             @Override
             public void onFailure(Throwable t) {
-                Log.e("FAIL",":(((((((((((");
+                Log.e("FAIL", ":(((((((((((");
             }
         });
+    }
+
+    private void addDataToDatabase(List<MovieDetail> moviesList) {
+
+        Vector<ContentValues> cVVector = new Vector<ContentValues>(moviesList.size());
+
+        for (int i=0; i<moviesList.size(); i++) {
+            ContentValues contentValues = new ContentValues();
+
+            MovieDetail movieDetail = moviesList.get(i);
+
+            contentValues.put(MovieContract.Movies.POSTER_PATH, movieDetail.getPosterPath());
+            contentValues.put(MovieContract.Movies.ADULT, movieDetail.getAdult());
+            contentValues.put(MovieContract.Movies.OVERVIEW, movieDetail.getOverview());
+            contentValues.put(MovieContract.Movies.RELEASE_DATE, movieDetail.getRelease_date());
+            contentValues.put(MovieContract.Movies.MOVIE_ID, movieDetail.getId());
+            contentValues.put(MovieContract.Movies.ORIGINAL_TITLE, movieDetail.getOriginalTitle());
+            contentValues.put(MovieContract.Movies.ORIGINAL_LANGUAGE, movieDetail.getOriginalLanguage());
+            contentValues.put(MovieContract.Movies.TITLE, movieDetail.getTitle());
+            contentValues.put(MovieContract.Movies.BACKDROP_PATH, movieDetail.getBackdropPath());
+            contentValues.put(MovieContract.Movies.POPULARITY, movieDetail.getPopularity());
+            contentValues.put(MovieContract.Movies.VOTE_COUNT, movieDetail.getVoteCount());
+            contentValues.put(MovieContract.Movies.VOTE_AVERAGE, movieDetail.getVoteAverage());
+
+            cVVector.add(contentValues);
+        }
+
+        int inserted = 0;
+
+        if (cVVector.size() > 0){
+            ContentValues[] contentValuesArray = new ContentValues[cVVector.size()];
+            cVVector.toArray(contentValuesArray);
+            inserted = mContext.getContentResolver().bulkInsert(MovieContract.Movies.CONTENT_URI, contentValuesArray);
+        }
+
+        Log.d(LOG_TAG, "FetchPopularMovie Task Complete. " + inserted + " Inserted");
     }
 }
