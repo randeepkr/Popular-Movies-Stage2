@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="movie_card_height">205dp</dimen>
+    <dimen name="fav_button_margin_top">230dp</dimen>
+    <dimen name="fav_button_margin_left">155dp</dimen>
+    <dimen name="share_button_margin_top">223dp</dimen>
+    <dimen name="share_button_magin_right">25dp</dimen>
+
+</resources>

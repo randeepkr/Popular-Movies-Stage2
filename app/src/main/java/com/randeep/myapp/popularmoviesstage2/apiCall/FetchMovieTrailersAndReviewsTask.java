@@ -5,6 +5,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.randeep.myapp.popularmoviesstage2.BuildConfig;
+import com.randeep.myapp.popularmoviesstage2.R;
 import com.randeep.myapp.popularmoviesstage2.bean.Review;
 import com.randeep.myapp.popularmoviesstage2.bean.TrailerAndReviews;
 import com.randeep.myapp.popularmoviesstage2.bean.Trailer;
@@ -42,7 +43,7 @@ public class FetchMovieTrailersAndReviewsTask {
     private void networkCall() {
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://api.themoviedb.org")
+                .baseUrl(mContext.getString(R.string.api_base_url))
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 

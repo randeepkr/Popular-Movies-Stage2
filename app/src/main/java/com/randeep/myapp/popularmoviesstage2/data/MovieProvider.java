@@ -28,6 +28,10 @@ public class MovieProvider extends ContentProvider {
     static final int REVIEWS_WITH_ID=301;
 
 
+    static final int FAVOURITE = 400;
+    static final int FAVOURITE_WITH_ID = 401;
+
+
     @Override
     public boolean onCreate() {
 
@@ -108,6 +112,27 @@ public class MovieProvider extends ContentProvider {
                         null,
                         sortOrder);
                 break;
+            case FAVOURITE:
+                mCursor = movieDbHelper.getReadableDatabase().query(
+                        MovieContract.Favourite.TABLE_NAME,
+                        projection,
+                        selection,
+                        selectionArgs,
+                        null,
+                        null,
+                        sortOrder
+                );
+                break;
+            case FAVOURITE_WITH_ID:
+                mCursor = movieDbHelper.getReadableDatabase().query(
+                        MovieContract.Favourite.TABLE_NAME,
+                        projection,
+                        MovieContract.Reviews.MOVIE_ID+" = ?",
+                        new String[] {String.valueOf(ContentUris.parseId(uri))},
+                        null,
+                        null,
+                        sortOrder);
+                break;
 
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
@@ -135,6 +160,10 @@ public class MovieProvider extends ContentProvider {
                 return MovieContract.Reviews.CONTENT_TYPE;
             case REVIEWS_WITH_ID:
                 return MovieContract.Reviews.CONTENT_ITEM_TYPE;
+            case FAVOURITE:
+                return MovieContract.Favourite.CONTENT_TYPE;
+            case FAVOURITE_WITH_ID:
+                return MovieContract.Favourite.CONTENT_ITEM_TYPE;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
@@ -169,6 +198,14 @@ public class MovieProvider extends ContentProvider {
                     returnUri = MovieContract.Reviews.buildMoviesUri(_idReviews);
                 else
                     throw new android.database.SQLException("Failed to insert row into " + uri);
+                break;
+            case FAVOURITE:
+                long _idFavourite = sqLiteDatabase.insert(MovieContract.Favourite.TABLE_NAME,null,values);
+                if (_idFavourite > 0){
+                    returnUri = MovieContract.Favourite.buildMoviesUri(_idFavourite);
+                }else {
+                    throw new android.database.SQLException("Failed to insert row into " + uri);
+                }
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
@@ -212,6 +249,14 @@ public class MovieProvider extends ContentProvider {
                 rowsDeleted = sqLiteDatabase.delete(MovieContract.Reviews.TABLE_NAME,
                         MovieContract.Reviews.MOVIE_ID + " = ?",
                         new String[]{String.valueOf(ContentUris.parseId(uri))});
+                break;
+            case FAVOURITE:
+                rowsDeleted = sqLiteDatabase.delete(MovieContract.Favourite.TABLE_NAME,selection,selectionArgs);
+                break;
+            case FAVOURITE_WITH_ID:
+                rowsDeleted = sqLiteDatabase.delete(MovieContract.Favourite.TABLE_NAME,
+                        MovieContract.Favourite.MOVIE_ID + " = ?",
+                        new String[]{MovieContract.Favourite.getMovieIdFromUri(uri)});
                 break;
 
             default:
@@ -261,6 +306,15 @@ public class MovieProvider extends ContentProvider {
                         values,
                         MovieContract.Reviews.MOVIE_ID + " = ?",
                         new String[]{String.valueOf(ContentUris.parseId(uri))});
+                break;
+            case FAVOURITE:
+                rowsUpdated = sqLiteDatabase.update(MovieContract.Favourite.TABLE_NAME, values, selection,
+                        selectionArgs);
+                break;
+            case FAVOURITE_WITH_ID:
+                rowsUpdated = sqLiteDatabase.update(MovieContract.Favourite.TABLE_NAME, values,
+                        MovieContract.Favourite.MOVIE_ID + " = ?",
+                        new String[]{MovieContract.Favourite.getMovieIdFromUri(uri)});
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
@@ -328,6 +382,22 @@ public class MovieProvider extends ContentProvider {
                 }
                 getContext().getContentResolver().notifyChange(uri, null);
                 return returnCount;
+            case FAVOURITE:
+                db.beginTransaction();
+                returnCount = 0;
+                try{
+                    for (ContentValues value : values){
+                        long _id = db.insert(MovieContract.Favourite.TABLE_NAME, null, value);
+                        if (_id > 0){
+                            returnCount++;
+                        }
+                    }
+                    db.setTransactionSuccessful();
+                }finally {
+                    db.endTransaction();
+                }
+                getContext().getContentResolver().notifyChange(uri, null);
+                return returnCount;
             default:
                 return super.bulkInsert(uri, values);
         }
@@ -347,6 +417,9 @@ public class MovieProvider extends ContentProvider {
 
         matcher.addURI(authority, MovieContract.PATH_REVIEWS, REVIEWS);
         matcher.addURI(authority, MovieContract.PATH_REVIEWS + "/*", REVIEWS_WITH_ID);
+
+        matcher.addURI(authority, MovieContract.PATH_FAVOURITE, FAVOURITE);
+        matcher.addURI(authority, MovieContract.PATH_FAVOURITE + "/*", FAVOURITE_WITH_ID);
 
         return matcher;
     }

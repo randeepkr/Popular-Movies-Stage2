@@ -5,6 +5,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.randeep.myapp.popularmoviesstage2.BuildConfig;
+import com.randeep.myapp.popularmoviesstage2.R;
 import com.randeep.myapp.popularmoviesstage2.bean.Movie;
 import com.randeep.myapp.popularmoviesstage2.bean.MovieDetail;
 import com.randeep.myapp.popularmoviesstage2.data.MovieContract;
@@ -27,21 +28,23 @@ public class FetchMovieTask {
     private static final String LOG_TAG = FetchMovieTask.class.getSimpleName();
     List<MovieDetail> moviesList = new ArrayList<>();
     Context mContext;
+    String sortingType;
 
-    public FetchMovieTask(Context context) {
-        networkCall();
+    public FetchMovieTask(Context context, String sorting) {
         mContext = context;
+        sortingType = sorting;
+        networkCall();
     }
 
     private void networkCall() {
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://api.themoviedb.org")
+                .baseUrl(mContext.getString(R.string.api_base_url))
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
         MovieApi movieApi = retrofit.create(MovieApi.class);
-        Call<Movie> call = movieApi.getMovie("popular", BuildConfig.API_KEY);
+        Call<Movie> call = movieApi.getMovie(sortingType, BuildConfig.API_KEY);
         call.enqueue(new Callback<Movie>() {
             @Override
             public void onResponse(Response<Movie> response) {
@@ -85,6 +88,7 @@ public class FetchMovieTask {
             contentValues.put(MovieContract.Movies.POPULARITY, movieDetail.getPopularity());
             contentValues.put(MovieContract.Movies.VOTE_COUNT, movieDetail.getVoteCount());
             contentValues.put(MovieContract.Movies.VOTE_AVERAGE, movieDetail.getVoteAverage());
+            contentValues.put(MovieContract.Movies.SORT_BY, sortingType);
 
             cVVector.add(contentValues);
         }

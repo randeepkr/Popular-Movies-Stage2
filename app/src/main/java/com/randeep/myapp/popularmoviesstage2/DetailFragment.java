@@ -1,5 +1,6 @@
 package com.randeep.myapp.popularmoviesstage2;
 
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.database.Cursor;
@@ -17,11 +18,13 @@ import android.support.v4.content.Loader;
 import android.support.v7.graphics.Palette;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
 import com.github.florent37.picassopalette.PicassoPalette;
@@ -63,6 +66,9 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     @Bind(R.id.overview)
     TextView description;
 
+    @Bind(R.id.no_review)
+    TextView noReview;
+
     @Bind(R.id.trailersList)
     RecyclerView trailerList;
 
@@ -88,7 +94,26 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             MovieContract.Movies.TABLE_NAME + "." + MovieContract.Movies.POPULARITY,
             MovieContract.Movies.TABLE_NAME + "." + MovieContract.Movies.VOTE_COUNT,
             MovieContract.Movies.TABLE_NAME + "." + MovieContract.Movies.VOTE_AVERAGE,
-            MovieContract.Movies.TABLE_NAME + "." + MovieContract.Movies.DOWNLOADED
+            MovieContract.Movies.TABLE_NAME + "." + MovieContract.Movies.DOWNLOADED,
+            MovieContract.Movies.TABLE_NAME + "." + MovieContract.Movies.SORT_BY,
+            MovieContract.Movies.TABLE_NAME + "." +MovieContract.Movies.FAVOURITE
+    };
+
+    private static final String[] FAVOURITE_COLUMNS = {
+            MovieContract.Favourite.TABLE_NAME + "." + MovieContract.Favourite._ID,
+            MovieContract.Favourite.TABLE_NAME + "." + MovieContract.Favourite.POSTER_PATH,
+            MovieContract.Favourite.TABLE_NAME + "." + MovieContract.Favourite.ADULT,
+            MovieContract.Favourite.TABLE_NAME + "." + MovieContract.Favourite.OVERVIEW,
+            MovieContract.Favourite.TABLE_NAME + "." + MovieContract.Favourite.RELEASE_DATE,
+            MovieContract.Favourite.TABLE_NAME + "." + MovieContract.Favourite.MOVIE_ID,
+            MovieContract.Favourite.TABLE_NAME + "." + MovieContract.Favourite.ORIGINAL_TITLE,
+            MovieContract.Favourite.TABLE_NAME + "." + MovieContract.Favourite.ORIGINAL_LANGUAGE,
+            MovieContract.Favourite.TABLE_NAME + "." + MovieContract.Favourite.TITLE,
+            MovieContract.Favourite.TABLE_NAME + "." + MovieContract.Favourite.BACKDROP_PATH,
+            MovieContract.Favourite.TABLE_NAME + "." + MovieContract.Favourite.POPULARITY,
+            MovieContract.Favourite.TABLE_NAME + "." + MovieContract.Favourite.VOTE_COUNT,
+            MovieContract.Favourite.TABLE_NAME + "." + MovieContract.Favourite.VOTE_AVERAGE,
+            MovieContract.Favourite.TABLE_NAME + "." + MovieContract.Favourite.DOWNLOADED
     };
 
     private static final String[] TRAILER_COLUMNS = {
@@ -122,6 +147,8 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     public static int COL_VOTE_COUNT = 11;
     public static int COL_VOTE_AVERAGE = 12;
     public static int COL_DOWNLOADED = 13;
+    public static int COL_SORT_BY = 14;
+    public static int COL_FAVOURITE = 15;
 
     public static int COL_TRAILER_ID = 0;
     public static int COL_TRAILER_NAME = 1;
@@ -136,6 +163,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     public static int COL_REVIEWS_CONTENT = 3;
     public static int COL_REVIEWS_MOVIE_ID = 4;
 
+    public static final String MOVIE_ID = "MOVIE_ID";
 
     String movie_Id;
     LinearLayoutManager linearLayoutManager;
@@ -149,7 +177,10 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
         ButterKnife.bind(this, rootView);
 
-        movie_Id = getActivity().getIntent().getStringExtra("MOVIE_ID");
+        Bundle arguments = getArguments();
+        if (arguments != null) {
+            movie_Id = arguments.getString(MOVIE_ID);
+        }
 
 
 //        new FetchMovieTrailersAndReviewsTask(getActivity(),movie_Id);
@@ -181,6 +212,17 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         if (null != movie_Id) {
             switch (id) {
                 case DETAIL_LOADER:
+                    String sortBy = Utility.getPreferredSorting(getActivity());
+                    if (sortBy.equalsIgnoreCase("favourite")){
+                        return new CursorLoader(
+                                getActivity(),
+                                MovieContract.Favourite.buildMoviesUriWithMovieId(movie_Id),
+                                FAVOURITE_COLUMNS,
+                                null,
+                                null,
+                                null
+                        );
+                    }
                     return new CursorLoader(
                             getActivity(),
                             MovieContract.Movies.buildMoviesUriWithMovieId(movie_Id),
@@ -222,7 +264,11 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
                 Picasso.with(getActivity())
                         .load(data.getString(COL_BACKDROP_PATH))
-                        .into(backgroundImage, PicassoPalette.with(data.getString(COL_BACKDROP_PATH), backgroundImage)
+                        .into(backgroundImage);
+
+                Picasso.with(getActivity())
+                        .load(data.getString(COL_POSTER_PATH))
+                        .into(posterImage, PicassoPalette.with(data.getString(COL_POSTER_PATH), posterImage)
                                 .use(PicassoPalette.Profile.VIBRANT)
                                 .intoCallBack(new PicassoPalette.CallBack() {
                                     @Override
@@ -248,10 +294,6 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                                     }
                                 }));
 
-                Picasso.with(getActivity())
-                        .load(data.getString(COL_POSTER_PATH))
-                        .into(posterImage);
-
                 if (data.getString(COL_DOWNLOADED).equalsIgnoreCase("0")) {
                     if (Utility.hasNetworkConnection(getActivity())) {
                         new FetchMovieTrailersAndReviewsTask(getActivity(), movie_Id);
@@ -260,9 +302,50 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
 
                 movieTitle.setText(data.getString(COL_TITLE));
-                releaseDateText.setText("Release Date: " + Utility.getYear(data.getString(COL_RELEASE_DATE)));
-                averageRating.setText("Average Rating: " + data.getString(COL_VOTE_AVERAGE));
+                releaseDateText.setText(getString(R.string.release_date) + Utility
+                        .getYear(data.getString(COL_RELEASE_DATE)));
+                averageRating.setText(getString(R.string.average_rate) + data
+                        .getString(COL_VOTE_AVERAGE));
                 description.setText(data.getString(COL_OVERVIEW));
+
+
+                favouriteFloatButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Cursor cursor = getActivity().getContentResolver()
+                                .query(MovieContract.Favourite.buildMoviesUriWithMovieId(movie_Id)
+                                        ,new String[]{MovieContract.Favourite.MOVIE_ID},null,null,null);
+                        if (cursor.moveToFirst()){
+                            int deleted = getActivity().getContentResolver().delete(MovieContract.Favourite.buildMovieUri(),
+                                    MovieContract.Favourite.MOVIE_ID + " = ?",
+                                    new String[]{movie_Id});
+
+                            Toast.makeText(getActivity(), getString(R.string.removedFav), Toast.LENGTH_SHORT).show();
+                        }else {
+                            ContentValues contentValues = new ContentValues();
+
+                            contentValues.put(MovieContract.Favourite.POSTER_PATH, data.getString(COL_POSTER_PATH));
+                            contentValues.put(MovieContract.Favourite.ADULT,data.getString(COL_ADULT));
+                            contentValues.put(MovieContract.Favourite.OVERVIEW, data.getString(COL_OVERVIEW));
+                            contentValues.put(MovieContract.Favourite.RELEASE_DATE, data.getString(COL_RELEASE_DATE));
+                            contentValues.put(MovieContract.Favourite.MOVIE_ID,data.getString(COL_MOVIE_ID));
+                            contentValues.put(MovieContract.Favourite.ORIGINAL_TITLE, data.getString(COL_ORIGINAL_TITLE));
+                            contentValues.put(MovieContract.Favourite.ORIGINAL_LANGUAGE, data.getString(COL_ORIGINAL_LANGUAGE));
+                            contentValues.put(MovieContract.Favourite.TITLE, data.getString(COL_TITLE));
+                            contentValues.put(MovieContract.Favourite.BACKDROP_PATH, data.getString(COL_BACKDROP_PATH));
+                            contentValues.put(MovieContract.Favourite.POPULARITY, data.getFloat(COL_POPULARITY));
+                            contentValues.put(MovieContract.Favourite.VOTE_COUNT, data.getInt(COL_VOTE_COUNT));
+                            contentValues.put(MovieContract.Favourite.VOTE_AVERAGE, data.getDouble(COL_VOTE_AVERAGE));
+                            contentValues.put(MovieContract.Favourite.DOWNLOADED, data.getInt(COL_DOWNLOADED));
+
+                            getActivity().getContentResolver().insert(MovieContract.Favourite.buildMovieUri(), contentValues);
+
+                            Toast.makeText(getActivity(), getString(R.string.addedFav), Toast.LENGTH_SHORT).show();
+
+                        }
+                    }
+                });
+
                 break;
             case TRAILER_LOADER:
                 if (!data.moveToFirst())
@@ -272,9 +355,12 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                 shareFloatButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        String trailerUrl = "https://www.youtube.com/watch?v=" + data.getString(
+                        String trailerUrl = getString(R.string.youtube_base_url) + data.getString(
                                 DetailFragment.COL_TRAILER_SOURCE);
-                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(trailerUrl));
+                        Intent intent = new Intent(Intent.ACTION_SEND);
+                        intent.putExtra(Intent.EXTRA_TEXT,
+                                movieTitle.getText().toString() + " Watch : " + trailerUrl);
+                        intent.setType("text/plain");
                         getActivity().startActivity(intent);
                     }
                 });
@@ -282,6 +368,9 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             case REVIEW_LOADER:
                 if (!data.moveToFirst())
                     return;
+
+                noReview.setVisibility(View.GONE);
+                reviewList.setVisibility(View.VISIBLE);
                 reviewsCursorAdapter.swapCursor(data);
 
         }
@@ -292,5 +381,15 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     public void onLoaderReset(Loader loader) {
         trailerCursorAdapter.swapCursor(null);
         reviewsCursorAdapter.swapCursor(null);
+    }
+
+    void onSortingChanged() {
+        String mI = movie_Id;
+        if (null != mI) {
+            getLoaderManager().restartLoader(DETAIL_LOADER, null, this);
+            getLoaderManager().restartLoader(TRAILER_LOADER, null, this);
+            getLoaderManager().restartLoader(REVIEW_LOADER, null, this);
+
+        }
     }
 }

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="poster_width">135dp</dimen>
+    <dimen name="poster_height">190dp</dimen>
+    <dimen name="share_button_margin_top">220dp</dimen>
+    <dimen name="share_button_magin_right">120dp</dimen>
+    <dimen name="fav_button_margin_top">242dp</dimen>
+    <dimen name="fav_button_margin_left">320dp</dimen>
+
+    <dimen name="main_margin_top">310dp</dimen>
+    <dimen name="main_margin_left">160dp</dimen>
+
+</resources>

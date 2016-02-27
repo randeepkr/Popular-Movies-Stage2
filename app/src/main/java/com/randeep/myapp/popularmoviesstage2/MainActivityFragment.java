@@ -1,9 +1,11 @@
 package com.randeep.myapp.popularmoviesstage2;
 
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
@@ -14,6 +16,8 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ListView;
+import android.widget.Toast;
 
 import com.randeep.myapp.popularmoviesstage2.apiCall.FetchMovieTask;
 import com.randeep.myapp.popularmoviesstage2.bean.MovieDetail;
@@ -31,13 +35,15 @@ import butterknife.ButterKnife;
 /**
  * Created by randeep on 2/7/16.ArrayList<MovieDetail> movieDetailArrayList;
  */
-public class MainActivityFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
+public class MainActivityFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
     View rootView;
     GridLayoutCursorAdapter gridLayoutCursorAdapter;
     @Bind(R.id.movies_list)
     RecyclerView moviesListView;
-    ArrayList<MovieDetail> movieDetailArrayList;
+    public int mPosition = RecyclerView.NO_POSITION;
+    private static final String SELECTED_KEY = "selected_position";
+    GridLayoutManager gridLayoutManager;
 
 
     private static final int MOVIE_LOADER = 0;
@@ -55,7 +61,26 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
             MovieContract.Movies.BACKDROP_PATH,
             MovieContract.Movies.POPULARITY,
             MovieContract.Movies.VOTE_COUNT,
-            MovieContract.Movies.VOTE_AVERAGE
+            MovieContract.Movies.VOTE_AVERAGE,
+            MovieContract.Movies.DOWNLOADED,
+            MovieContract.Movies.SORT_BY
+    };
+
+    private static final String[] FAVOURITE_COLUMNS = {
+            MovieContract.Favourite.TABLE_NAME + "." + MovieContract.Favourite._ID,
+            MovieContract.Favourite.POSTER_PATH,
+            MovieContract.Favourite.ADULT,
+            MovieContract.Favourite.OVERVIEW,
+            MovieContract.Favourite.RELEASE_DATE,
+            MovieContract.Favourite.MOVIE_ID,
+            MovieContract.Favourite.ORIGINAL_TITLE,
+            MovieContract.Favourite.ORIGINAL_LANGUAGE,
+            MovieContract.Favourite.TITLE,
+            MovieContract.Favourite.BACKDROP_PATH,
+            MovieContract.Favourite.POPULARITY,
+            MovieContract.Favourite.VOTE_COUNT,
+            MovieContract.Favourite.VOTE_AVERAGE,
+            MovieContract.Movies.DOWNLOADED,
     };
 
     public static int COL_ID = 0;
@@ -71,12 +96,21 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
     public static int COL_POPULARITY = 10;
     public static int COL_VOTE_COUNT = 11;
     public static int COL_VOTE_AVERAGE = 12;
+    public static int COL_DOWNLOADED = 13;
+    public static int COL_SORT_BY = 14;
+
+    public interface Callback {
+
+        void onItemSelected(String movieUri);
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        movieDetailArrayList = new ArrayList<>();
+        if (!Utility.hasNetworkConnection(getActivity())) {
+            Toast.makeText(getContext(), "Network Not Available!", Toast.LENGTH_LONG).show();
+        }
+        updateMovieList();
 
     }
 
@@ -93,12 +127,15 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
         rootView = inflater.inflate(R.layout.fragment_main, container, false);
         ButterKnife.bind(this, rootView);
 
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(getActivity(), 2);
+        gridLayoutManager = new GridLayoutManager(getActivity(), 2);
         gridLayoutCursorAdapter = new GridLayoutCursorAdapter(getActivity(), null);
         moviesListView.setLayoutManager(gridLayoutManager);
         moviesListView.setAdapter(gridLayoutCursorAdapter);
 
-        new FetchMovieTask(getActivity());
+        if (savedInstanceState != null && savedInstanceState.containsKey(SELECTED_KEY)) {
+
+            mPosition = savedInstanceState.getInt(SELECTED_KEY);
+        }
 
         return rootView;
     }
@@ -106,17 +143,39 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 
+        String sortBy = Utility.getPreferredSorting(getActivity());
         Uri movie = MovieContract.Movies.buildMovieUri();
+        Uri favourite = MovieContract.Favourite.buildMovieUri();
+        if (sortBy.equalsIgnoreCase(getString(R.string.pref_sorting_favourite_value))) {
+            return new CursorLoader(getActivity(),
+                    favourite,
+                    FAVOURITE_COLUMNS,
+                    null,
+                    null,
+                    null);
+        }
         return new CursorLoader(getActivity(),
                 movie,
                 MOVIE_COLUMNS,
-                null,
-                null,
+                MovieContract.Movies.SORT_BY + " = ?",
+                new String[]{sortBy},
                 null);
     }
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        if (data.getCount() == 0 && Utility.getPreferredSorting(getActivity()).equalsIgnoreCase("favourite")) {
+            Toast.makeText(getActivity(), getString(R.string.nothing_fav), Toast.LENGTH_SHORT).show();
+        }
+        if (getActivity() instanceof MainActivity) {
+
+            mPosition = gridLayoutManager.findFirstCompletelyVisibleItemPosition();
+        }
+        if(mPosition != RecyclerView.NO_POSITION) {
+
+            moviesListView.smoothScrollToPosition(mPosition);
+
+        }
         gridLayoutCursorAdapter.swapCursor(data);
     }
 
@@ -125,29 +184,26 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
         gridLayoutCursorAdapter.swapCursor(null);
     }
 
-//    private void exportDb() {
-//        try {
-//            File sd = Environment.getExternalStorageDirectory();
-//            File data = Environment.getDataDirectory();
-//
-//            if (sd.canWrite()) {
-//                //"//data//com.pulp.framework//databases//contents.db";
-//                String currentDBPath = "//data//" + getActivity().getPackageName() + "//databases//content.db";
-//                String backupDBPath = "contents.db";
-//                File currentDB = new File(data, currentDBPath);
-//                File backupDB = new File(sd, backupDBPath);
-//
-//                if (currentDB.exists()) {
-//                    FileChannel src = new FileInputStream(currentDB).getChannel();
-//                    FileChannel dst = new FileOutputStream(backupDB).getChannel();
-//                    dst.transferFrom(src, 0, src.size());
-//                    src.close();
-//                    dst.close();
-//                }
-//            }
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
+    private void updateMovieList() {
+
+        String sortBy = Utility.getPreferredSorting(getContext());
+        if (!sortBy.equalsIgnoreCase(getString(R.string.pref_sorting_favourite_value)))
+            new FetchMovieTask(getActivity(), sortBy);
+    }
+
+    public void onSortingChanged() {
+        updateMovieList();
+        getLoaderManager().restartLoader(MOVIE_LOADER, null, this);
+    }
+
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        mPosition = gridLayoutManager.findFirstCompletelyVisibleItemPosition();
+
+        if (mPosition != RecyclerView.NO_POSITION) {
+            outState.putInt(SELECTED_KEY, mPosition);
+        }
+        super.onSaveInstanceState(outState);
+    }
 }

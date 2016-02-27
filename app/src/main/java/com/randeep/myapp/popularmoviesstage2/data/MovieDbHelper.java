@@ -5,6 +5,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 import com.randeep.myapp.popularmoviesstage2.data.MovieContract.Movies;
+import com.randeep.myapp.popularmoviesstage2.data.MovieContract.Favourite;
 import com.randeep.myapp.popularmoviesstage2.data.MovieContract.Trailers;
 import com.randeep.myapp.popularmoviesstage2.data.MovieContract.Reviews;
 /**
@@ -38,7 +39,25 @@ public class MovieDbHelper extends SQLiteOpenHelper {
                 Movies.VOTE_COUNT + " INTEGER, "+
                 Movies.VOTE_AVERAGE+ " REAL, "+
                 Movies.DOWNLOADED+ " INTEGER NOT NULL DEFAULT 0, "+
+                Movies.SORT_BY+" TEXT, "+
                 Movies.FAVOURITE+ " INTEGER NOT NULL DEFAULT 0," +
+                " UNIQUE (" + Movies.MOVIE_ID + ") ON CONFLICT REPLACE)";
+
+        final String SQL_CREATE_FAVOURITE_TABLE = "CREATE TABLE "+ Favourite.TABLE_NAME +
+                " (" + Favourite._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "+
+                Favourite.POSTER_PATH + " TEXT, "+
+                Favourite.ADULT + " TEXT, "+
+                Favourite.OVERVIEW + " TEXT, "+
+                Favourite.RELEASE_DATE + " TEXT, "+
+                Favourite.MOVIE_ID + " TEXT, "+
+                Favourite.ORIGINAL_TITLE + " TEXT, "+
+                Favourite.ORIGINAL_LANGUAGE + " TEXT, "+
+                Favourite.TITLE + " TEXT, "+
+                Favourite.BACKDROP_PATH + " TEXT, "+
+                Favourite.POPULARITY + " REAL, "+
+                Favourite.VOTE_COUNT + " INTEGER, "+
+                Favourite.VOTE_AVERAGE+ " REAL, "+
+                Favourite.DOWNLOADED+ " INTEGER NOT NULL DEFAULT 0, "+
                 " UNIQUE (" + Movies.MOVIE_ID + ") ON CONFLICT REPLACE)";
         
         final String SQL_CREATE_TRAILERS_TABLE = "CREATE TABLE "+ Trailers.TABLE_NAME +
@@ -60,6 +79,7 @@ public class MovieDbHelper extends SQLiteOpenHelper {
 
 
         db.execSQL(SQL_CREATE_MOVIES_TABLE);
+        db.execSQL(SQL_CREATE_FAVOURITE_TABLE);
         db.execSQL(SQL_CREATE_TRAILERS_TABLE);
         db.execSQL(SQL_CREATE_REVIEWS_TABLE);
     }
@@ -68,6 +88,7 @@ public class MovieDbHelper extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
         db.execSQL("DROP TABLE IF EXISTS "+Movies.TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS "+Favourite.TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS "+Trailers.TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS "+Reviews.TABLE_NAME);
         onCreate(db);

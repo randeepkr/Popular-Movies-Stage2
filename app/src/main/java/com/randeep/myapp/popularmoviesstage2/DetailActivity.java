@@ -21,8 +21,13 @@ public class DetailActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        String movieId = getIntent().getStringExtra("MOVIE_ID");
         if (savedInstanceState == null ){
+
+            Bundle arguments = new Bundle();
+            arguments.putString("MOVIE_ID", movieId);
             DetailFragment detailFragment = new DetailFragment();
+            detailFragment.setArguments(arguments);
             getSupportFragmentManager().beginTransaction().replace(R.id.container, detailFragment).commit();
         }
     }

@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Typeface;
 import android.os.Environment;
+import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -30,6 +31,7 @@ import butterknife.ButterKnife;
 public class GridLayoutCursorAdapter extends CursorRecyclerViewAdapter<GridLayoutCursorAdapter.ViewHolder> {
 
     Context mContext;
+//    public int mPosition = RecyclerView.NO_POSITION;
 
     public GridLayoutCursorAdapter(Context context, Cursor cursor) {
         super(context, cursor);
@@ -98,9 +100,9 @@ public class GridLayoutCursorAdapter extends CursorRecyclerViewAdapter<GridLayou
             @Override
             public void onClick(View v) {
                 try {
-                    Intent intent = new Intent(mContext, DetailActivity.class).putExtra("MOVIE_ID",
-                            v.getTag().toString());
-                    mContext.startActivity(intent);
+
+                    ((MainActivity)mContext).onItemSelected(v.getTag().toString());
+
                 }catch (Exception e){
 
                 }

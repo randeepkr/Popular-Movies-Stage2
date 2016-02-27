@@ -21,13 +21,11 @@ import butterknife.ButterKnife;
 /**
  * Created by randeep on 2/21/16.
  */
-public class TrailerCursorAdapter extends CursorAdapter {
+public class TrailerCursorAdapter extends CursorRecyclerViewAdapter<TrailerCursorAdapter.ViewHolder> {
 
     Context mContext;
 
-    public TrailerMovieAdapter(Context context, Cursor c, int flags) {
-        super(context, c, flags);
-    }
+
 
     public TrailerCursorAdapter(Context context, Cursor cursor) {
         super(context, cursor);
@@ -56,9 +54,8 @@ public class TrailerCursorAdapter extends CursorAdapter {
     public void onBindViewHolder(TrailerCursorAdapter.ViewHolder viewHolder, Cursor cursor) {
 
         String urlSource = cursor.getString(DetailFragment.COL_TRAILER_SOURCE);
-        final String BASE_URL="http://img.youtube.com/vi/";
-        String imageUrl = BASE_URL+urlSource+"/0.jpg";
-        String trailerUrl="https://www.youtube.com/watch?v="+cursor.getString(
+        String imageUrl = mContext.getString(R.string.youtube_image_baseurl)+urlSource+"/0.jpg";
+        String trailerUrl=mContext.getString(R.string.youtube_base_url)+cursor.getString(
                 DetailFragment.COL_TRAILER_SOURCE);
         viewHolder.trailerImage.setTag(trailerUrl);
         Picasso.with(mContext)

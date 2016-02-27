@@ -1,8 +1,10 @@
 package com.randeep.myapp.popularmoviesstage2;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.preference.PreferenceManager;
 
 /**
  * Created by randeep on 2/20/16.
@@ -29,5 +31,12 @@ public class Utility {
                     hasConnectedMobile = true;
         }
         return hasConnectedWifi || hasConnectedMobile;
+    }
+
+    public static String getPreferredSorting(Context context) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        String sortBy = sharedPreferences.getString(context.getString(R.string.pref_sorting_key),
+                context.getString(R.string.pref_sorting_popularity_value));
+        return  sortBy;
     }
 }

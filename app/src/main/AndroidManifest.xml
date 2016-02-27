@@ -3,8 +3,7 @@
     package="com.randeep.myapp.popularmoviesstage2">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission
-        android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:allowBackup="true"
@@ -22,16 +21,22 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".DetailActivity"
-            android:theme="@style/AppTheme.NoActionBar"
-            android:label="@string/app_name">
-            <meta-data android:name="android.support.PARENT_ACTIVITY"
-                android:value=".MainActivity"/>
+        <activity
+            android:name=".DetailActivity"
+            android:label="@string/title_activity_movie_detail"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".MainActivity" />
         </activity>
 
         <provider
-            android:authorities="com.randeep.myapp.popularmoviesstage2"
-            android:name=".data.MovieProvider"/>
+            android:name=".data.MovieProvider"
+            android:authorities="com.randeep.myapp.popularmoviesstage2" />
+
+        <activity
+            android:name=".SettingsActivity"
+            android:label="@string/title_activity_settings"></activity>
     </application>
 
 </manifest>

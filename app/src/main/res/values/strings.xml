@@ -1,7 +1,29 @@
 <resources>
     <string name="app_name">Popular Movies Stage 2</string>
     <string name="title_activity_main">Popular Movies</string>
-    <string name="title_activity_movie_detail">MovieDetail</string>
+    <string name="title_activity_movie_detail">Movie Information</string>
     <string name="action_settings">Settings</string>
     <string name="nothing"> </string>
+    <string name="release_date">Release Date:</string>
+    <string name="average_rate">Average Rating:</string>
+    <string name="addedFav">Added to favourite.</string>
+    <string name="removedFav">Removed from favourite.</string>
+    <string name="youtube_base_url">https://www.youtube.com/watch?v=</string>
+    <string name="youtube_image_baseurl">http://img.youtube.com/vi/</string>
+    <string name="api_base_url">http://api.themoviedb.org</string>
+    <string name="title_activity_settings">Settings</string>
+
+    <string name="sort_by">Sort By</string>
+    <string name="pref_sorting_key">sorting</string>
+    <string name="pref_sorting_popularity_value" translatable="false">popular</string>
+    <string name="pref_sorting_highest_rating_value" translatable="false">top_rated</string>
+    <string name="pref_sorting_favourite_value" translatable="false">favourite</string>
+
+    <string name="pref_sorting_pupolarity_label">Popularity</string>
+    <string name="pref_sorting_highest_rating_label">Highest Rated</string>
+    <string name="pref_sorting_favourite_label">Favourite</string>
+    <string name="nothing_fav">Nothing is added in favourite.</string>
+    <string name="review">Reviews: </string>
+    <string name="trailer">Trailers: </string>
+    <string name="no_review">None Reviews Yet.</string>
 </resources>
